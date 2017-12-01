@@ -1,52 +1,48 @@
 {
-  "name": "react-tree-menu",
-  "version": "1.5.1",
-  "description": "A tree menu component for React",
-  "main": "index.js",
-  "keywords": [
-    "react",
-    "tree",
-    "tree menu",
-    "menu",
-    "react-component"
-  ],
-  "directories": {
-    "example": "example"
-  },
-  "dependencies": {
-    "invariant": "^2.1.1",
-    "lodash": "^3.2.0",
-    "object-assign": "^2.0.0"
-  },
-  "peerDependencies": {
-    "react": ">=0.14.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/MandarinConLaBarba/react-tree-menu"
-  },
-  "devDependencies": {
-    "babel-cli": "^6.10.1",
-    "babel-loader": "^6.2.4",
-    "babel-preset-react": "^6.11.1",
-    "babel-preset-react-hmre": "^1.1.1",
-    "immutable": "^3.6.2",
-    "react": "^0.14.0",
-    "react-addons-css-transition-group": "^0.14.0",
-    "react-dom": "^0.14.0",
-    "react-hot-loader": "^1.3.0",
-    "rimraf": "^2.5.2",
-    "webpack": "^1.13.1",
-    "webpack-dev-server": "^1.14.1",
-    "webpack-validator": "^2.2.2"
-  },
-  "scripts": {
-    "prepublish": "npm run lib",
-    "lib": "rimraf lib && babel src -d lib",
-    "watch": "webpack-dev-server",
-    "bundle": "webpack",
-    "test": "jest"
-  },
-  "author": "Mandarin Drummond",
-  "license": "MIT"
+	"name": "react-tree-menu",
+	"version": "1.5.1",
+	"description": "A tree menu component for React",
+	"main": "index.js",
+	"keywords": ["react", "tree", "tree menu", "menu", "react-component"],
+	"scripts": {
+		"prepare": "npm run lib",
+		"prepublish": "npm run lib",
+		"lib": "rimraf lib && babel src -d lib",
+		"watch": "webpack-dev-server",
+		"bundle": "webpack",
+		"test": "jest"
+	},
+	"directories": {
+		"example": "example"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git://github.com/jbrodriguez/react-tree-menu"
+	},
+	"dependencies": {
+		"create-react-class": "^15.6.2",
+		"invariant": "^2.2.2",
+		"lodash.assign": "^4.2.0",
+		"lodash.clone": "^4.5.0",
+		"lodash.map": "^4.6.0",
+		"lodash.omit": "^4.5.0",
+		"lodash.pick": "^4.4.0",
+		"lodash.sortby": "^4.7.0",
+		"object-assign": "^4.1.1",
+		"prop-types": "^15.6.0",
+		"react": "^16.2.0",
+		"react-dom": "^16.2.0"
+	},
+	"devDependencies": {
+		"babel-cli": "^6.26.0",
+		"babel-loader": "^7.1.2",
+		"babel-preset-react": "^6.24.1",
+		"react-hot-loader": "^3.1.3",
+		"rimraf": "^2.6.2",
+		"webpack": "^3.9.1",
+		"webpack-dev-server": "^2.9.5",
+		"webpack-validator": "^3.0.0"
+	},
+	"author": "Juan B. Rodriguez",
+	"license": "MIT"
 }

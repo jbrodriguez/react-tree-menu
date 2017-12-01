@@ -1,155 +1,146 @@
 var React = require('react'),
-  TreeNode = require('./TreeNode'),
-  TreeNodeFactory = React.createFactory(TreeNode),
-  TreeNodeMixin = require('./TreeNodeMixin'),
-  clone = require('lodash/lang/clone'),
-  omit = require('lodash/object/omit'),
-  sortBy = require('lodash/collection/sortBy'),
-  invariant = require('invariant'),
-  assign = require('object-assign'),
-  map = require('lodash/collection/map');
+	TreeNode = require('./TreeNode'),
+	TreeNodeFactory = React.createFactory(TreeNode),
+	TreeNodeMixin = require('./TreeNodeMixin'),
+	clone = require('lodash.clone'),
+	omit = require('lodash.omit'),
+	sortBy = require('lodash.sortby'),
+	invariant = require('invariant'),
+	assign = require('object-assign'),
+	map = require('lodash.map'),
+	createReactClass = require('create-react-class'),
+	PropTypes = require('prop-types')
 
 /**
  * The root component for a tree view. Can have one or many <TreeNode/> children
  *
  * @type {TreeMenu}
  */
-var TreeMenu = React.createClass({
+var TreeMenu = createReactClass({
+	mixins: [TreeNodeMixin],
 
-  mixins : [TreeNodeMixin],
+	propTypes: {
+		stateful: PropTypes.bool,
+		classNamePrefix: PropTypes.string,
+		identifier: PropTypes.string,
+		onTreeNodeClick: PropTypes.func,
+		onTreeNodeCheckChange: PropTypes.func,
+		onTreeNodeSelectChange: PropTypes.func,
+		collapsible: PropTypes.bool,
+		expandIconClass: PropTypes.string,
+		collapseIconClass: PropTypes.string,
+		data: PropTypes.oneOfType([PropTypes.array, PropTypes.object]),
+		labelFilter: PropTypes.func,
+		labelFactory: PropTypes.func,
+		checkboxFactory: PropTypes.func,
+		sort: PropTypes.oneOfType([PropTypes.bool, PropTypes.func]),
+	},
 
-  propTypes : {
+	getDefaultProps: function() {
+		return {
+			classNamePrefix: 'tree-view',
+			stateful: false,
+		}
+	},
 
-    stateful: React.PropTypes.bool,
-    classNamePrefix: React.PropTypes.string,
-    identifier: React.PropTypes.string,
-    onTreeNodeClick: React.PropTypes.func,
-    onTreeNodeCheckChange: React.PropTypes.func,
-    onTreeNodeSelectChange: React.PropTypes.func,
-    collapsible: React.PropTypes.bool,
-    expandIconClass: React.PropTypes.string,
-    collapseIconClass: React.PropTypes.string,
-    data: React.PropTypes.oneOfType([
-      React.PropTypes.array,
-      React.PropTypes.object
-    ]),
-    labelFilter: React.PropTypes.func,
-    labelFactory: React.PropTypes.func,
-    checkboxFactory: React.PropTypes.func,
-    sort: React.PropTypes.oneOfType([
-      React.PropTypes.bool,
-      React.PropTypes.function
-    ])
-  },
+	render: function() {
+		var props = this.props
 
-  getDefaultProps: function () {
-    return {
-      classNamePrefix: "tree-view",
-      stateful: false
-    }
-  },
+		return <div className={props.classNamePrefix}>{this._getTreeNodes()}</div>
+	},
 
-  render : function () {
+	/**
+	 * Gets data from declarative TreeMenu nodes
+	 *
+	 * @param children
+	 * @returns {*}
+	 * @private
+	 */
+	_getDataFromChildren: function(children) {
+		var iterableChildren = Array.isArray(children) ? children : [children]
 
-    var props = this.props;
+		var self = this
+		return iterableChildren.map(function(child) {
+			var data = clone(omit(child.props, 'children'))
 
-    return (
-      <div className={props.classNamePrefix}>
-        {this._getTreeNodes()}
-      </div>);
+			if (child.props.children) {
+				data.children = self._getDataFromChildren(child.props.children)
+			}
 
-  },
+			return data
+		})
+	},
 
-  /**
-   * Gets data from declarative TreeMenu nodes
-   *
-   * @param children
-   * @returns {*}
-   * @private
-   */
-  _getDataFromChildren: function (children) {
+	/**
+	 * Get TreeNode instances for render()
+	 *
+	 * @returns {*}
+	 * @private
+	 */
+	_getTreeNodes: function() {
+		var treeMenuProps = this.props,
+			treeData
 
-    var iterableChildren = Array.isArray(children) ? children : [children];
+		invariant(
+			!treeMenuProps.children || !treeMenuProps.data,
+			'Either children or data props are expected in TreeMenu, but not both',
+		)
 
-    var self = this;
-    return iterableChildren.map(function (child) {
+		if (treeMenuProps.children) {
+			treeData = this._getDataFromChildren(treeMenuProps.children)
+		} else {
+			treeData = treeMenuProps.data
+		}
 
-      var data = clone(omit(child.props, "children"));
+		var thisComponent = this
 
-      if (child.props.children) {
-        data.children = self._getDataFromChildren(child.props.children);
-      }
+		function dataToNodes(data, ancestor) {
+			var isRootNode = false
+			if (!ancestor) {
+				isRootNode = true
+				ancestor = []
+			}
 
-      return data;
-    });
-  },
+			var nodes = map(data, function(dataForNode, i) {
+				var nodeProps = omit(dataForNode, ['children', 'onClick', 'onCheckChange']),
+					children = []
 
-  /**
-   * Get TreeNode instances for render()
-   *
-   * @returns {*}
-   * @private
-   */
-  _getTreeNodes: function() {
-    
-    var treeMenuProps = this.props,
-      treeData;
+				nodeProps.label = nodeProps.label || i
 
-    invariant(!treeMenuProps.children || !treeMenuProps.data,
-      "Either children or data props are expected in TreeMenu, but not both");
+				if (dataForNode.children) {
+					children = dataToNodes(
+						dataForNode.children,
+						ancestor.concat(thisComponent.getNodeId(treeMenuProps, nodeProps, i)),
+					)
+				}
 
-    if (treeMenuProps.children) {
-      treeData = this._getDataFromChildren(treeMenuProps.children);
-    } else {
-      treeData = treeMenuProps.data;
-    }
+				nodeProps = assign(
+					nodeProps,
+					thisComponent.getTreeNodeProps(treeMenuProps, nodeProps, ancestor, isRootNode, i),
+				)
 
-    var thisComponent = this;
+				return TreeNodeFactory(nodeProps, children)
+			})
 
+			var sort = thisComponent.props.sort
 
-    function dataToNodes(data, ancestor) {
+			if (sort) {
+				var sorter =
+					typeof sort === 'boolean'
+						? function(node) {
+								return node.props.label
+							}
+						: sort
+				nodes = sortBy(nodes, sorter)
+			}
 
-      var isRootNode = false;
-      if (!ancestor) {
-        isRootNode = true;
-        ancestor = [];
-      }
+			return nodes
+		}
 
-      var nodes = map(data, function(dataForNode, i) {
+		if (treeData) {
+			return dataToNodes(treeData)
+		}
+	},
+})
 
-        var nodeProps = omit(dataForNode, ["children", "onClick", "onCheckChange"]),
-          children = [];
-
-        nodeProps.label = nodeProps.label || i;
-
-        if (dataForNode.children) {
-          children = dataToNodes(dataForNode.children, ancestor.concat(thisComponent.getNodeId(treeMenuProps, nodeProps, i)));
-        }
-
-        nodeProps = assign(nodeProps, thisComponent.getTreeNodeProps(treeMenuProps, nodeProps, ancestor, isRootNode, i));
-
-        return TreeNodeFactory(nodeProps, children);
-
-      });
-
-      var sort = thisComponent.props.sort;
-
-      if (sort) {
-        var sorter = typeof sort === "boolean" ? function (node) { return node.props.label } : sort;
-        nodes = sortBy(nodes, sorter);
-      }
-
-      return nodes;
-
-    }
-
-    if (treeData) {
-      return dataToNodes(treeData);
-    }
-
-  }
-
-});
-
-
-module.exports = TreeMenu;
+module.exports = TreeMenu
